@@ -14,7 +14,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
     "predeploy": "npm run build", // 部署前自动构建
     "deploy": "gh-pages -d build"  // 将build目录部署到gh-pages分支
   },
