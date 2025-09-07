@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/SatinAu-Website-Test/static/css/main.25a92247.css",
+    "main.js": "/SatinAu-Website-Test/static/js/main.92124476.js",
+    "index.html": "/SatinAu-Website-Test/index.html",
+    "main.25a92247.css.map": "/SatinAu-Website-Test/static/css/main.25a92247.css.map",
+    "main.92124476.js.map": "/SatinAu-Website-Test/static/js/main.92124476.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.25a92247.css",
+    "static/js/main.92124476.js"
+  ]
+}
