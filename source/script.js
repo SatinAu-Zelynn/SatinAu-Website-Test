@@ -150,6 +150,7 @@ if (document.body.id === "blog-page") {
   const errorState = document.getElementById("errorState");
   const retryBtn = document.getElementById("retryBtn");
   const postError = document.getElementById("postError");
+  const categorySelector = document.getElementById("blogCategory");
   
   // 缓存机制
   const postCache = new Map();
@@ -158,7 +159,14 @@ if (document.body.id === "blog-page") {
 
   // 初始化
   function initBlog() {
+    // 加载默认分类
     loadPostsList();
+    
+    // 分类切换事件
+    categorySelector.addEventListener("change", function() {
+      currentCategory = this.value;
+      loadPostsList();
+    });
     
     // 返回列表按钮事件
     backToList.addEventListener("click", () => {
@@ -185,14 +193,28 @@ if (document.body.id === "blog-page") {
     emptyState.style.display = "none";
     errorState.style.display = "none";
 
-    fetch("https://blog.satinau.cn/index.json")
+    // 根据分类加载不同的数据源
+    let url = "https://blog.satinau.cn/index.json";
+    if (currentCategory === "today") {
+      url = "https://blog.satinau.cn/today/index.json"; // 历史上的今天文件夹
+    } else if (currentCategory === "reviews") {
+      url = "https://blog.satinau.cn/reviews/index.json"; // 影评文件夹
+    }
+
+    fetch(url)
       .then(res => {
         if (!res.ok) throw new Error("网络响应异常");
         return res.json();
       })
       .then(posts => {
         postsData = posts;
-        renderPostsList(posts);
+        
+        // 如果是"最新"分类，按时间排序
+        if (currentCategory === "latest") {
+          postsData.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+        
+        renderPostsList(postsData);
         
         // 隐藏加载状态，显示列表
         showLoading(false);
@@ -259,8 +281,16 @@ if (document.body.id === "blog-page") {
       return;
     }
 
+    // 根据分类构建不同的文件路径
+    let fileUrl = `https://blog.satinau.cn/${post.file}`;
+    if (currentCategory === "today") {
+      fileUrl = `https://blog.satinau.cn/today/${post.file}`;
+    } else if (currentCategory === "reviews") {
+      fileUrl = `https://blog.satinau.cn/reviews/${post.file}`;
+    }
+
     // 从网络加载
-    fetch(`https://blog.satinau.cn/${post.file}`)
+    fetch(fileUrl)
       .then(res => {
         if (!res.ok) throw new Error("文章加载失败");
         return res.text();
@@ -277,6 +307,10 @@ if (document.body.id === "blog-page") {
         postError.style.display = "block";
       });
   }
+
+  // 初始化博客功能
+  initBlog();
+}
 
   // 渲染文章内容
   function renderPost(post, mdContent) {
