@@ -210,16 +210,16 @@ if (document.body.id === "blog-page") {
     let url = "";
     switch(category) {
       case "latest":
-        url = "blog/index.json";  // 所有文章的索引
+        url = "https://blog.satinau.cn/index.json";  // 所有文章的索引
         break;
       case "today-in-history":
-        url = "blog/历史上的今天/index.json";  // 历史上的今天分类索引
+        url = "https://blog.satinau.cn/历史上的今天/index.json";  // 历史上的今天分类索引
         break;
       case "reviews":
-        url = "blog/影评/index.json";  // 影评分类索引
+        url = "https://blog.satinau.cn/影评/index.json";  // 影评分类索引
         break;
       default:
-        url = "blog/index.json";
+        url = "https://blog.satinau.cn/index.json";
     }
 
     fetch(url)
@@ -305,13 +305,13 @@ if (document.body.id === "blog-page") {
     let filePath = "";
     
     if (category === "latest") {
-      filePath = `blog/${post.file}`;
+      filePath = `https://blog.satinau.cn/${post.file}`;
     } else if (category === "today-in-history") {
-      filePath = `blog/历史上的今天/${post.file}`;
+      filePath = `https://blog.satinau.cn/历史上的今天/${post.file}`;
     } else if (category === "reviews") {
-      filePath = `blog/影评/${post.file}`;
+      filePath = `https://blog.satinau.cn/影评/${post.file}`;
     } else {
-      filePath = `blog/${post.file}`;
+      filePath = `https://blog.satinau.cn/${post.file}`;
     }
 
     // 从网络加载
