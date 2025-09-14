@@ -729,3 +729,55 @@ body#index-page .wechat-qr p { margin-top: 12px; font-size: 15px; font-weight: 6
     accent-color: #0a84ff; /* 单选框选中色适配深色 */
   }
 }
+
+/* Liquid Glass 材质下拉框样式 */
+.category-selector {
+  margin: 24px 0;
+  position: relative;
+}
+
+#categorySelect {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 16px;
+  color: #333;
+  appearance: none;
+  width: 100%;
+  max-width: 300px;
+  cursor: pointer;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  transition: all 0.3s ease;
+}
+
+#categorySelect:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.category-selector::after {
+  content: "▼";
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #666;
+  font-size: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  #categorySelect {
+    background: rgba(40, 40, 40, 0.4);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #f5f5f5;
+  }
+  
+  .category-selector::after {
+    color: #ccc;
+  }
+}
