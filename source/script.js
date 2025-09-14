@@ -37,17 +37,6 @@ function showToast(msg) {
   setTimeout(() => { tip.classList.remove("show", "done"); }, 1800);
 }
 
-/* 防抖函数 */
-function debounce(func, wait) {
-  let timeout;
-  return function() {
-    const context = this;
-    const args = arguments;
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(context, args), wait);
-  };
-}
-
 /* 页面加载动画 & 卡片入场 */
 window.onload = function () {
   document.body.style.opacity = 1;
@@ -161,7 +150,6 @@ if (document.body.id === "blog-page") {
   const errorState = document.getElementById("errorState");
   const retryBtn = document.getElementById("retryBtn");
   const postError = document.getElementById("postError");
-  const categorySelect = document.getElementById("categorySelect");
   
   // 缓存机制
   const postCache = new Map();
@@ -170,11 +158,7 @@ if (document.body.id === "blog-page") {
 
   // 初始化
   function initBlog() {
-    // 添加分类选择事件监听
-    categorySelect.addEventListener("change", () => {
-      const category = categorySelect.value;
-      loadPostsByCategory(category);
-    });
+    loadPostsList();
     
     // 返回列表按钮事件
     backToList.addEventListener("click", () => {
@@ -183,10 +167,7 @@ if (document.body.id === "blog-page") {
     });
     
     // 重试按钮事件
-    retryBtn.addEventListener("click", () => {
-      const category = categorySelect.value;
-      loadPostsByCategory(category);
-    });
+    retryBtn.addEventListener("click", loadPostsList);
     
     // 文章内重试按钮事件委托
     postView.addEventListener("click", (e) => {
@@ -194,46 +175,24 @@ if (document.body.id === "blog-page") {
         loadPost(currentPost, true);
       }
     });
-
-    // 初始加载最新文章
-    loadPostsByCategory("latest");
   }
 
-  // 按分类加载文章列表
-  function loadPostsByCategory(category) {
+  // 加载文章列表
+  function loadPostsList() {
     // 显示加载状态
     showLoading(true);
     listEl.style.display = "none";
     emptyState.style.display = "none";
     errorState.style.display = "none";
 
-    let url = "";
-    switch(category) {
-      case "latest":
-        url = "https://blog.satinau.cn/index.json";  // 所有文章的索引
-        break;
-      case "today-in-history":
-        url = "https://blog.satinau.cn/历史上的今天/index.json";  // 历史上的今天分类索引
-        break;
-      case "reviews":
-        url = "https://blog.satinau.cn/影评/index.json";  // 影评分类索引
-        break;
-      default:
-        url = "https://blog.satinau.cn/index.json";
-    }
-
-    fetch(url)
+    fetch("https://blog.satinau.cn/index.json")
       .then(res => {
         if (!res.ok) throw new Error("网络响应异常");
         return res.json();
       })
       .then(posts => {
         postsData = posts;
-        // 如果是最新分类，按时间排序
-        if (category === "latest") {
-          postsData.sort((a, b) => new Date(b.date) - new Date(a.date));
-        }
-        renderPostsList(postsData);
+        renderPostsList(posts);
         
         // 隐藏加载状态，显示列表
         showLoading(false);
@@ -300,22 +259,8 @@ if (document.body.id === "blog-page") {
       return;
     }
 
-    // 根据当前分类构建正确的文件路径
-    const category = categorySelect.value;
-    let filePath = "";
-    
-    if (category === "latest") {
-      filePath = `https://blog.satinau.cn/${post.file}`;
-    } else if (category === "today-in-history") {
-      filePath = `https://blog.satinau.cn/历史上的今天/${post.file}`;
-    } else if (category === "reviews") {
-      filePath = `https://blog.satinau.cn/影评/${post.file}`;
-    } else {
-      filePath = `https://blog.satinau.cn/${post.file}`;
-    }
-
     // 从网络加载
-    fetch(filePath)
+    fetch(`https://blog.satinau.cn/${post.file}`)
       .then(res => {
         if (!res.ok) throw new Error("文章加载失败");
         return res.text();
@@ -344,14 +289,7 @@ if (document.body.id === "blog-page") {
       const processedMd = mdContent.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
         // 如果是相对路径，添加前缀
         if (!src.startsWith('http://') && !src.startsWith('https://')) {
-          const category = categorySelect.value;
-          let imagePath = 'blog/';
-          if (category === "today-in-history") {
-            imagePath += '历史上的今天/';
-          } else if (category === "reviews") {
-            imagePath += '影评/';
-          }
-          return `![${alt}](${imagePath}${src})`;
+          return `![${alt}](blog/${src})`;
         }
         return match;
       });
@@ -364,14 +302,7 @@ if (document.body.id === "blog-page") {
         if (href && !href.startsWith('#') && 
             !href.startsWith('http://') && 
             !href.startsWith('https://')) {
-          const category = categorySelect.value;
-          let linkPath = 'blog/';
-          if (category === "today-in-history") {
-            linkPath += '历史上的今天/';
-          } else if (category === "reviews") {
-            linkPath += '影评/';
-          }
-          link.setAttribute('href', `${linkPath}${href}`);
+          link.setAttribute('href', `blog/${href}`);
         }
         
         // 外部链接处理
@@ -390,22 +321,45 @@ if (document.body.id === "blog-page") {
       });
     } catch (err) {
       console.error("Markdown渲染失败:", err);
-      postError.style.display = "block";
-    } finally {
-      showLoading(false);
-      postView.style.display = "block";
+      postContent.innerHTML = "<p>文章解析错误，请稍后重试</p>";
+    }
+    
+    // 显示文章视图
+    listEl.style.display = "none";
+    postView.style.display = "block";
+
+    // 触发文章淡入动画
+    postView.classList.remove("animate");
+    void postView.offsetWidth; // 强制重绘
+    postView.classList.add("animate");
+    
+    // 隐藏加载动画
+    showLoading(false);
+    
+    // 滚动到顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // 显示/隐藏加载动画
+  function showLoading(show) {
+    if (show) {
+      loader.classList.add("show");
+    } else {
+      loader.classList.remove("show");
     }
   }
 
-  // 显示/隐藏加载状态
-  function showLoading(show) {
-    if (loader) {
-      loader.style.display = show ? "flex" : "none";
-    }
+  // 防抖函数
+  function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
   }
 
   // 初始化博客页面
-  initBlog();
+  document.addEventListener('DOMContentLoaded', initBlog);
 }
 
 /* ===================== Unified 3-page left/right transitions ===================== */
