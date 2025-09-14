@@ -37,6 +37,24 @@ function showToast(msg) {
   setTimeout(() => { tip.classList.remove("show", "done"); }, 1800);
 }
 
+// 添加防抖函数
+function debounce(func, delay) {
+  let timer;
+  return function() {
+    const context = this;
+    const args = arguments;
+    clearTimeout(timer);
+    timer = setTimeout(() => func.apply(context, args), delay);
+  };
+}
+
+// 加载状态管理
+function showLoading(show) {
+  if (loader) {
+    loader.classList.toggle('show', show);
+  }
+}
+
 /* 页面加载动画 & 卡片入场 */
 window.onload = function () {
   document.body.style.opacity = 1;
@@ -156,7 +174,8 @@ if (document.body.id === "blog-page") {
   const postCache = new Map();
   let postsData = [];
   let currentPost = null;
-
+  let currentCategory = "latest"; // 初始化分类变量，默认为最新
+  
   // 初始化
   function initBlog() {
     // 加载默认分类
@@ -308,10 +327,6 @@ if (document.body.id === "blog-page") {
       });
   }
 
-  // 初始化博客功能
-  initBlog();
-}
-
   // 渲染文章内容
   function renderPost(post, mdContent) {
     postTitle.textContent = post.title;
@@ -323,77 +338,31 @@ if (document.body.id === "blog-page") {
       const processedMd = mdContent.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
         // 如果是相对路径，添加前缀
         if (!src.startsWith('http://') && !src.startsWith('https://')) {
-          return `![${alt}](blog/${src})`;
+          let baseUrl = 'https://blog.satinau.cn/';
+          if (currentCategory === "today") {
+            baseUrl += 'today/';
+          } else if (currentCategory === "reviews") {
+            baseUrl += 'reviews/';
+          }
+          return `![${alt}](${baseUrl}${src})`;
         }
         return match;
       });
-      
+      // 渲染处理后的Markdown
       postContent.innerHTML = marked.parse(processedMd);
-      
-      // 处理链接跳转
-      postContent.querySelectorAll('a').forEach(link => {
-        const href = link.getAttribute('href');
-        if (href && !href.startsWith('#') && 
-            !href.startsWith('http://') && 
-            !href.startsWith('https://')) {
-          link.setAttribute('href', `blog/${href}`);
-        }
-        
-        // 外部链接处理
-        if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
-          link.setAttribute('target', '_blank');
-          link.setAttribute('rel', 'noopener noreferrer');
-          
-          // 对于iOS设备使用弹窗确认
-          link.addEventListener('click', (e) => {
-            if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
-              e.preventDefault();
-              showIosAlert(href);
-            }
-          });
-        }
-      });
+      showLoading(false);
+      // 显示文章视图
+      postView.style.display = "block";
+      listEl.style.display = "none";
     } catch (err) {
-      console.error("Markdown渲染失败:", err);
-      postContent.innerHTML = "<p>文章解析错误，请稍后重试</p>";
-    }
-    
-    // 显示文章视图
-    listEl.style.display = "none";
-    postView.style.display = "block";
-
-    // 触发文章淡入动画
-    postView.classList.remove("animate");
-    void postView.offsetWidth; // 强制重绘
-    postView.classList.add("animate");
-    
-    // 隐藏加载动画
-    showLoading(false);
-    
-    // 滚动到顶部
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  // 显示/隐藏加载动画
-  function showLoading(show) {
-    if (show) {
-      loader.classList.add("show");
-    } else {
-      loader.classList.remove("show");
+      console.error("渲染文章失败:", err);
+      postError.style.display = "block";
+      showLoading(false);
     }
   }
 
-  // 防抖函数
-  function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-  }
-
-  // 初始化博客页面
-  document.addEventListener('DOMContentLoaded', initBlog);
+  // 初始化博客功能
+  initBlog();
 }
 
 /* ===================== Unified 3-page left/right transitions ===================== */
