@@ -215,11 +215,13 @@ if (document.body.id === "blog-page") {
     // 登录按钮
     loginBtn.addEventListener('click', () => {
       authModal.style.display = 'block';
+      authModal.classList.add('show');
     });
 
     // 关闭弹窗
     closeAuthModal.addEventListener('click', () => {
       authModal.style.display = 'none';
+      authModal.classList.remove('show')
       authError.textContent = '';
     });
 
