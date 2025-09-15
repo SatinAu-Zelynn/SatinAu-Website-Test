@@ -752,10 +752,11 @@ body#index-page .wechat-qr p { margin-top: 12px; font-size: 15px; font-weight: 6
 
 /* 认证相关样式 */
 .auth-controls {
-  margin-left: auto;
   display: flex;
+  justify-content: center; /* 居中显示 */
   gap: 10px;
   align-items: center;
+  margin-top: 16px; /* 与标题保持距离 */
 }
 
 .auth-controls button {
