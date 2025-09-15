@@ -216,12 +216,20 @@ if (document.body.id === "blog-page") {
     loginBtn.addEventListener('click', () => {
       authModal.style.display = 'block';
       authModal.classList.add('show');
+      const modalContent = authModal.querySelector('.modal');
+      if (modalContent) {
+        modalContent.classList.add('show');
+      }
     });
 
     // 关闭弹窗
     closeAuthModal.addEventListener('click', () => {
       authModal.style.display = 'none';
       authModal.classList.remove('show')
+      const modalContent = authModal.querySelector('.modal');
+      if (modalContent) {
+        modalContent.classList.remove('show');
+      }
       authError.textContent = '';
     });
 
