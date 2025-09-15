@@ -212,23 +212,24 @@ if (document.body.id === "blog-page") {
 
   // 设置认证事件监听
   function setupAuthEventListeners() {
-    // 登录按钮 - 显示弹窗
+    // 登录按钮
     loginBtn.addEventListener('click', () => {
-      toggleModal("authOverlay", true); // 显示遮罩
-      toggleModal("authModal", true);   // 显示弹窗
+      authModal.style.display = 'block';
+      authModal.classList.add('show');
+      const modalContent = authModal.querySelector('.modal');
+      if (modalContent) {
+        modalContent.classList.add('show');
+      }
     });
 
     // 关闭弹窗
     closeAuthModal.addEventListener('click', () => {
-      toggleModal("authOverlay", false); // 隐藏遮罩
-      toggleModal("authModal", false);   // 隐藏弹窗
-      authError.textContent = '';
-    });
-
-    // 点击遮罩关闭弹窗（与主页逻辑一致）
-    document.getElementById('authOverlay').addEventListener('click', () => {
-      toggleModal("authOverlay", false);
-      toggleModal("authModal", false);
+      authModal.style.display = 'none';
+      authModal.classList.remove('show')
+      const modalContent = authModal.querySelector('.modal');
+      if (modalContent) {
+        modalContent.classList.remove('show');
+      }
       authError.textContent = '';
     });
 
