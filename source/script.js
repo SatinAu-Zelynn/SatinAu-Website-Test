@@ -266,16 +266,24 @@ if (document.body.id === "blog-page") {
     signupBtn.addEventListener('click', async () => {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      
+  
       const { data, error } = await supabase.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
       });
 
       if (error) {
         authError.textContent = error.message;
       } else {
-        authError.textContent = '注册邮件已发送，请查收验证';
+        authError.textContent = '注册成功';
+        authError.style.color = 'green'; // 改为绿色提示
+        document.getElementById('emailTab').style.display = 'block';
+        document.getElementById('oauthTab').style.display = 'none';
+        tabBtns.forEach(b => b.classList.remove('active'));
+        document.querySelector('[data-tab="email"]').classList.add('active');
       }
     });
 
