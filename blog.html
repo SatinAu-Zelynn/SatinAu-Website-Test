@@ -86,26 +86,6 @@
           <p id="postDate" class="post-date"></p>
         </div>
         <div id="postContent" class="md-body"></div>
-        <!-- 评论区 -->
-        <div class="comments-section">
-          <h3>评论区</h3>
-  
-          <!-- 评论输入框（仅登录用户可见） -->
-          <div id="commentForm" style="display: none; margin: 20px 0;">
-            <textarea id="commentContent" rows="3" placeholder="写下你的评论..."></textarea>
-            <div class="comment-actions">
-              <button id="submitComment" class="back-button">发表评论</button>
-            </div>
-          </div>
-  
-          <!-- 未登录提示 -->
-          <div id="loginToComment" style="margin: 20px 0; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 8px;">
-            请<a href="javascript:void(0);" onclick="document.getElementById('loginBtn').click()">登录</a>后发表评论
-          </div>
-  
-          <!-- 评论列表 -->
-          <div id="commentsList"></div>
-        </div>
         <div id="postError" style="display: none; text-align: center; padding: 40px 20px;">
           <p>文章加载失败</p>
           <button class="retryPost back-button" style="margin-top: 15px;">
