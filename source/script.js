@@ -153,8 +153,6 @@ if (document.body.id === "blog-page") {
   const supabaseUrl = 'https://fluqmhywopwayiehzdik.supabase.co';
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZsdXFtaHl3b3B3YXlpZWh6ZGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzgzMjUsImV4cCI6MjA3MzUxNDMyNX0.NEWnUQGvuhD55PDfUnJwxXYCfQHO_PONGSUBrT5_ta4';
   const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-  // DOM 元素
   const loginBtn = document.getElementById('loginBtn');
   const logoutBtn = document.getElementById('logoutBtn');
   const userInfo = document.getElementById('userInfo');
@@ -167,6 +165,12 @@ if (document.body.id === "blog-page") {
   const authError = document.getElementById('authError');
   const tabBtns = document.querySelectorAll('.tab-btn');
   const authTabs = document.querySelectorAll('.auth-tab');
+  // 评论相关DOM元素
+  const commentForm = document.getElementById('commentForm');
+  const loginToComment = document.getElementById('loginToComment');
+  const commentContent = document.getElementById('commentContent');
+  const submitComment = document.getElementById('submitComment');
+  const commentsList = document.getElementById('commentsList');
   
   // 缓存机制
   const postCache = new Map();
@@ -552,8 +556,207 @@ if (document.body.id === "blog-page") {
     };
   }
 
+  // 初始化评论区状态
+  function initCommentSection() {
+    // 根据登录状态显示评论框或登录提示
+    checkUserSession().then(session => {
+      if (session) {
+        commentForm.style.display = 'block';
+        loginToComment.style.display = 'none';
+      } else {
+        commentForm.style.display = 'none';
+        loginToComment.style.display = 'block';
+      }
+    });
+
+    // 绑定评论提交事件
+    submitComment.addEventListener('click', submitNewComment);
+  }
+
+  // 加载指定文章的评论
+  async function loadComments(postId) {
+    if (!postId) return;
+
+    const { data, error } = await supabase
+      .from('comments')
+      .select(`
+        id,
+        content,
+        created_at,
+        updated_at,
+        user:user_id(
+          id,
+          email
+        )
+      `)
+      .eq('post_id', postId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('加载评论失败:', error);
+      return;
+    }
+
+    renderComments(data);
+  }
+
+  // 渲染评论列表
+  function renderComments(comments) {
+    if (!comments || comments.length === 0) {
+      commentsList.innerHTML = '<p>暂无评论，快来抢沙发吧~</p>';
+      return;
+    }
+
+    commentsList.innerHTML = comments.map(comment => `
+      <div class="comment-item" data-id="${comment.id}">
+        <div class="comment-header">
+          <span class="comment-author">${comment.user.email.split('@')[0]}</span>
+          <span class="comment-time">${formatDate(comment.created_at)}</span>
+        </div>
+        <div class="comment-content">${comment.content}</div>
+        ${isCurrentUser(comment.user.id) ? `
+          <div class="comment-actions">
+            <button class="comment-action-btn edit-comment">编辑</button>
+            <button class="comment-action-btn delete-comment">删除</button>
+          </div>
+        ` : ''}
+      </div>
+    `).join('');
+
+    // 绑定编辑和删除事件
+    document.querySelectorAll('.edit-comment').forEach(btn => {
+      btn.addEventListener('click', handleEditComment);
+    });
+
+    document.querySelectorAll('.delete-comment').forEach(btn => {
+      btn.addEventListener('click', handleDeleteComment);
+    });
+  }
+
+  // 提交新评论
+  async function submitNewComment() {
+    const content = commentContent.value.trim();
+    if (!content) {
+      showToast('评论内容不能为空');
+      return;
+    }
+
+    if (!currentPost) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      showToast('请先登录');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('comments')
+      .insert([
+        { 
+          post_id: currentPost.id, 
+          user_id: session.user.id, 
+          content 
+        }
+      ]);
+
+    if (error) {
+      console.error('发表评论失败:', error);
+      showToast('发表评论失败');
+      return;
+    }
+
+    // 清空输入框并重新加载评论
+    commentContent.value = '';
+    loadComments(currentPost.id);
+    showToast('评论发表成功');
+  }
+
+  // 处理评论编辑
+  async function handleEditComment(e) {
+    const commentEl = e.target.closest('.comment-item');
+    const commentId = commentEl.dataset.id;
+    const currentContent = commentEl.querySelector('.comment-content').textContent;
+  
+    const newContent = prompt('编辑你的评论:', currentContent);
+    if (!newContent || newContent.trim() === currentContent.trim()) return;
+
+    const { error } = await supabase
+      .from('comments')
+      .update({ 
+        content: newContent.trim(),
+        updated_at: new Date()
+      })
+      .eq('id', commentId);
+
+    if (error) {
+      console.error('更新评论失败:', error);
+      showToast('更新评论失败');
+      return;
+    }
+
+    loadComments(currentPost.id);
+    showToast('评论已更新');
+  }
+
+  // 处理评论删除
+  async function handleDeleteComment(e) {
+    const commentEl = e.target.closest('.comment-item');
+    const commentId = commentEl.dataset.id;
+  
+    if (!confirm('确定要删除这条评论吗？')) return;
+
+    const { error } = await supabase
+      .from('comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (error) {
+      console.error('删除评论失败:', error);
+      showToast('删除评论失败');
+      return;
+    }
+
+    loadComments(currentPost.id);
+    showToast('评论已删除');
+  }
+
+  // 辅助函数：检查是否为当前登录用户
+  async function isCurrentUser(userId) {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user?.id === userId;
+  }
+
+  // 辅助函数：格式化日期
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  }
+
+  // 在文章加载后加载评论
+  function loadPost(post) {
+    currentPost = post;
+    postTitle.textContent = post.title;
+    postDate.textContent = new Date(post.created_at).toLocaleDateString();
+    postContent.innerHTML = marked.parse(post.content || '');
+  
+    // 加载当前文章的评论
+    loadComments(post.id);
+  
+    listEl.style.display = 'none';
+    postView.style.display = 'block';
+    postError.style.display = 'none';
+  }
+
+
   // 初始化博客页面
   document.addEventListener('DOMContentLoaded', initBlog);
+  initCommentSection();
 }
 
 /* ===================== Unified 3-page left/right transitions ===================== */
